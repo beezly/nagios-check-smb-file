@@ -340,8 +340,8 @@ sub showOutputAndExit {
         $output .= '|';
         while (my ($key, $value) = each(%PERF_DATA)) {
             $output .= "'" . $$value{'LABEL'} . "'=" . $$value{'VALUE'}.$$value{'UOM'}
-             . " 'latency'=". $$value{'LATENCY'} . "s"
-             . ';' . $$value{'WARN'} . ';' . $$value{'CRIT'} . ";;";
+             . ';' . $$value{'WARN'} . ';' . $$value{'CRIT'} . ";;"
+             . " 'latency'=". $$value{'LATENCY'} . "s;;;;";
         }
     }
     print $output . "\n";
