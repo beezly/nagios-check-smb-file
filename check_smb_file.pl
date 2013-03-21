@@ -19,13 +19,14 @@
 use strict;
 use POSIX;
 use Getopt::Long;
+use Time::HiRes;
 
 #####################################################################################
 ### Variable Declarations
 #####################################################################################
 my $VERSION    = '0.5.1';
 my $START_TIME = time();
-
+my $START_TIMER = Time::HiRes::time();
 #------------------------------------------------------------------------------------
 # Some Nagios specific stuff
 #------------------------------------------------------------------------------------
@@ -338,8 +339,9 @@ sub showOutputAndExit {
     if (keys %PERF_DATA) {
         $output .= '|';
         while (my ($key, $value) = each(%PERF_DATA)) {
-            $output .= "'" . $$value{'LABEL'} . "'=" . $$value{'VALUE'}
-             . $$value{'UOM'} . ';' . $$value{'WARN'} . ';' . $$value{'CRIT'} . ";;";
+            $output .= "'" . $$value{'LABEL'} . "'=" . $$value{'VALUE'}.$$value{'UOM'}
+             . " 'latency'=". $$value{'LATENCY'} . "s"
+             . ';' . $$value{'WARN'} . ';' . $$value{'CRIT'} . ";;";
         }
     }
     print $output . "\n";
@@ -388,15 +390,19 @@ sub getPerformanceDataForProperty {
        'UOM'   => ''
     );
 
+    my $end_timer = Time::HiRes::time();
+
     my $default_uom = determineDefaultUom($warning_uom, $critical_uom);
     $perf_data{'UOM'} = $default_uom;
     if ($FILE_PROPERTY eq 'SIZE') {
+        $perf_data{'LATENCY'} = sprintf("%.2f", $end_timer - $START_TIMER);
         $perf_data{'VALUE'} = sprintf("%.2f", $file_stat[7] / $VALUE_MEASURE{'SIZE'}{$default_uom});
         $perf_data{'WARN'}  = sprintf("%.2f", convertPropertyValue($warning_value, $warning_uom) / $VALUE_MEASURE{'SIZE'}{$default_uom}) if $warning_value;
         $perf_data{'CRIT'}  = sprintf("%.2f", convertPropertyValue($critical_value, $critical_uom) / $VALUE_MEASURE{'SIZE'}{$default_uom}) if $critical_value;
     }
     elsif ($FILE_PROPERTY eq 'MODIFIED' || $FILE_PROPERTY eq 'ACCESSED') {
         my $value_stat = $VALUE_PROPERTY{$FILE_PROPERTY}{'STAT'};
+        $perf_data{'LATENCY'} = sprintf("%.2f", $end_timer - $START_TIMER);
         $perf_data{'VALUE'} = sprintf("%.2f", ($START_TIME - $file_stat[$value_stat]) / $VALUE_MEASURE{'TIME'}{$default_uom});
         $perf_data{'WARN'}  = sprintf("%.2f", convertPropertyValue($warning_value, $warning_uom) / $VALUE_MEASURE{'TIME'}{$default_uom}) if $warning_value;
         $perf_data{'CRIT'}  = sprintf("%.2f", convertPropertyValue($critical_value, $critical_uom) / $VALUE_MEASURE{'TIME'}{$default_uom}) if $critical_value;
